@@ -9,7 +9,8 @@ app.use(express.json());
 const PORT = 3000;
 
 function generarHtmlResultados(datos) {
-    const { instructor, programa, ficha, equipos, fecha } = datos;
+    const { instructor, correoInstructor, programa, ficha, equipos, fecha } = datos;
+    const fechaActual = fecha || new Date().toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
     
     let htmlEquipos = '';
     equipos.forEach((eq, idx) => {
@@ -70,6 +71,11 @@ function generarHtmlResultados(datos) {
                     <td style="padding:4px 0;color:#666"><strong>Instructor:</strong></td>
                     <td style="padding:4px 0;color:#333">${instructor}</td>
                 </tr>
+                ${correoInstructor ? `
+                <tr>
+                    <td style="padding:4px 0;color:#666"><strong>Correo:</strong></td>
+                    <td style="padding:4px 0;color:#333">${correoInstructor}</td>
+                </tr>` : ''}
                 <tr>
                     <td style="padding:4px 0;color:#666"><strong>Programa:</strong></td>
                     <td style="padding:4px 0;color:#333">${programa}</td>
@@ -80,7 +86,7 @@ function generarHtmlResultados(datos) {
                 </tr>
                 <tr>
                     <td style="padding:4px 0;color:#666"><strong>Fecha:</strong></td>
-                    <td style="padding:4px 0;color:#333">${fecha}</td>
+                    <td style="padding:4px 0;color:#333">${fechaActual}</td>
                 </tr>
             </table>
         </div>
