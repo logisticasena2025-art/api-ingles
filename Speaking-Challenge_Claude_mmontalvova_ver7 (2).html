@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes">
+  <title>Speaking Challenge · SENA Gestión Logística · v7</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- ════ INTRO SPLASH ════ -->
+  <div id="screen-intro" onclick="dismissIntro()">
+    <img id="intro-img" src="./Speakin-Challenge Valentina Dorado.png" alt="Speaking Challenge">
+    <div class="intro-hint">▶ Clic para comenzar</div>
+    <div
+      style="position:absolute;top:16px;right:20px;font-family:'Fredoka One',cursive;font-size:.75rem;color:rgba(255,255,255,.35);letter-spacing:.1em">
+      Speaking-Challenge · v7 · mmontalvova</div>
+  </div>
+
+  <!-- ── Indicador grabación ── -->
+  <div id="rec-ind">🎤 Grabando...</div>
+  <!-- ── Toast ── -->
+  <div id="toast"></div>
+
+  <!-- ════════════════════════════════════════════════════════
+     MODAL: CONFIGURACIÓN
+════════════════════════════════════════════════════════ -->
+  <div id="modal-config" class="modal-ov">
+    <div class="modal-box config-modal" id="config-modal-box">
+      <div class="modal-head">
+        <div class="modal-title">⚙️ Configuración Speaking-Challenge · <span id="cfg-programa-display">Gestión Logística</span> · v<span id="cfg-version-display">10</span></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn-action btn-ghost" style="font-size:.78rem;padding:7px 14px"
+            onclick="closeModal('modal-config')">✕ Cancelar</button>
+          <button class="btn-action btn-green" style="font-size:.78rem;padding:7px 14px" onclick="saveConfig()">💾
+            Guardar Configuración</button>
+          <button class="modal-close" onclick="closeModal('modal-config')">✕</button>
+        </div>
+      </div>
+
+      <!-- Datos del Aprendiz / Instructor -->
+      <div class="m-card">
+        <div class="m-card-title">👤 Datos del Instructor / Sesión</div>
+        <div class="fg fg-4">
+          <div class="field"><label>Instructor</label><input id="cfg-instructor" value="Manuel Montalvo Valle"></div>
+          <div class="field"><label>Centro</label><input id="cfg-centro" value="CINAFLUP"></div>
+          <div class="field"><label>Programa</label><input id="cfg-programa" value="Gestión Logística"></div>
+          <div class="field"><label>Ficha</label><input id="cfg-ficha" value="3400499"></div>
+        </div>
+      </div>
+
+      <!-- Equipos y Jugadores -->
+      <div class="m-card">
+        <div class="m-card-title">👥 Equipos y Jugadores</div>
+        <div class="fg" style="grid-template-columns:repeat(4,1fr);gap:8px">
+          <div class="field">
+            <label>Número de Equipos</label>
+            <select id="cfg-num-teams" onchange="updateTeamBlocks()">
+              <option value="1">1 Equipo</option>
+              <option value="2" selected>2 Equipos</option>
+              <option value="3">3 Equipos</option>
+              <option value="4">4 Equipos</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Modo de Sesión</label>
+            <select id="cfg-mode">
+              <option value="prueba">🧪 Modo Prueba</option>
+              <option value="evaluacion">📝 Modo Evaluación</option>
+            </select>
+          </div>
+        </div>
+        <div id="teams-builder" class="teams-builder">
+        </div>
+      </div>
+
+      <!-- Cargar preguntas desde JSON -->
+      <div class="m-card">
+        <div class="m-card-title">📁 Cargar Preguntas (JSON)</div>
+        <div class="fg" style="grid-template-columns:1fr auto;gap:10px;align-items:end">
+          <div class="field">
+            <label>Seleccionar archivo JSON</label>
+            <input type="file" id="cfg-json-file" accept=".json" onchange="loadQuestionsFromJSON(this)">
+          </div>
+          <div class="field" style="min-width:140px">
+            <label>Estado</label>
+            <div id="json-status" class="json-status">Sin archivo cargado</div>
+          </div>
+        </div>
+        <div id="json-info" class="json-info" style="display:none">
+          <span id="json-filename"></span> · <span id="json-count"></span> preguntas
+        </div>
+      </div>
+
+      <!-- Voz, Velocidad y Tono TTS -->
+      <div class="m-card">
+        <div class="m-card-title">🎤 Voz, Velocidad y Tono (TTS)</div>
+        <div class="fg" style="grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px">
+          <div class="field" style="grid-column:span 2">
+            <label>Voz</label>
+            <select id="cfg-voice">
+              <option value="">Cargando voces...</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column:span 2">
+            <label>Velocidad (<span id="rate-lbl">0.9</span>x)</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="cfg-rate" min="0.5" max="2" step="0.1" value="0.9"
+                oninput="document.getElementById('rate-lbl').textContent=this.value">
+              <span class="range-val" id="rate-show">0.9x</span>
+            </div>
+          </div>
+        </div>
+        <div class="fg" style="grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px">
+          <div class="field" style="grid-column:span 2">
+            <label>Tono (<span id="pitch-lbl">1.0</span>)</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="cfg-pitch" min="0.5" max="2" step="0.1" value="1.0"
+                oninput="document.getElementById('pitch-lbl').textContent=this.value">
+              <span class="range-val" id="pitch-show">1.0</span>
+            </div>
+          </div>
+          <div class="field" style="grid-column:span 2">
+            <label>Frase de prueba</label>
+            <select id="cfg-tts-phrase" onchange="updateTtsPreview()">
+              <option value="">Seleccionar frase...</option>
+            </select>
+          </div>
+        </div>
+        <div id="tts-preview" style="font-size:.8rem;color:var(--text2);margin-bottom:8px;display:none"></div>
+        <div style="display:flex;align-items:center;justify-content:center">
+          <button class="btn-action btn-blue" style="font-size:.7rem;padding:4px 12px" onclick="testVoice()">🔊 Probar voz</button>
+        </div>
+      </div>
+
+      <!-- Skins / Temas -->
+      <div class="m-card">
+        <div class="m-card-title">🎨 Skin / Tema visual</div>
+        <div class="fg" style="grid-template-columns:1fr 1fr">
+          <div class="field">
+            <label>Seleccionar tema</label>
+            <select id="cfg-skin" onchange="changeSkin(this.value)">
+              <option value="default">🌟 Default (Verde/Oro)</option>
+              <option value="ocean">🌊 Océano (Azul/Cyan)</option>
+              <option value="sunset">🌅 Atardecer (Naranja/Rosa)</option>
+              <option value="purple">💜 Violeta (Púrpura/Lila)</option>
+              <option value="dark">🌑 Oscuro (Gris/Negro)</option>
+            </select>
+          </div>
+          <div class="field" style="justify-content:center;align-items:center;display:flex">
+            <button class="btn-action btn-ghost" style="font-size:.7rem" onclick="resetSkin()">↺ Restablecer tema</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parámetros de Pronunciación -->
+      <div class="m-card">
+        <div class="m-card-title">📊 Parámetros de Pronunciación</div>
+        <div class="fg fg-2" style="margin-bottom:12px">
+          <div class="field">
+            <label>Pronunciación Mínima (<span id="pmin-lbl">30</span>%)</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="cfg-pmin" min="10" max="90" value="30"
+                oninput="document.getElementById('pmin-lbl').textContent=this.value">
+              <span class="range-val" id="pmin-show">30%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Pronunciación Aceptable (<span id="pacc-lbl">70</span>%)</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="cfg-pacc" min="10" max="90" value="70"
+                oninput="document.getElementById('pacc-lbl').textContent=this.value">
+              <span class="range-val" id="pacc-show">70%</span>
+            </div>
+          </div>
+        </div>
+        <div class="fg fg-2">
+          <div class="field">
+            <label>Texto al no alcanzar mínimo (texto_minimo)</label>
+            <textarea id="cfg-txt-min" rows="2">Try again! Practice makes perfect!</textarea>
+          </div>
+          <div class="field">
+            <label>Texto al superar aceptable (texto_aceptable)</label>
+            <textarea id="cfg-txt-acc" rows="2">Excellent! Great pronunciation! Keep it up!</textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opciones del Juego -->
+      <div class="m-card">
+        <div class="m-card-title">🎮 Opciones del Juego</div>
+        <div class="fg fg-3">
+          <div class="field">
+            <label>Repeticiones máximas por frase</label>
+            <input type="number" id="cfg-reps" value="3" min="1" max="10">
+          </div>
+          <div class="field">
+            <label>Pronunciar Reglas al inicio</label>
+            <select id="cfg-read-rules">
+              <option value="1">Sí, leer reglas</option>
+              <option value="0">No leer</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Frase final del ganador</label>
+            <input id="cfg-winner-phrase" value="Congratulations! You are the champion!">
+          </div>
+        </div>
+        <div class="fg fg-2" style="margin-top:9px">
+          <div class="field">
+            <label>Mostrar traducción al español</label>
+            <select id="cfg-show-es">
+              <option value="1">Sí mostrar</option>
+              <option value="0">No mostrar</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Leer regla al pasar el mouse (hover)</label>
+            <select id="cfg-hover-read">
+              <option value="1">✅ Activado</option>
+              <option value="0">❌ Desactivado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opciones Frases — controles inline + botón emergente -->
+      <div class="m-card">
+        <div class="m-card-title" style="justify-content:space-between">
+          <span>📋 Frases de la Sesión</span>
+          <button class="btn-action btn-blue" style="font-size:.7rem;padding:4px 12px"
+            onclick="openModal('modal-frases')">👁 Ver tabla de frases</button>
+        </div>
+        <div class="fg" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+          <div class="field">
+            <label>Frases a usar</label>
+            <select id="cfg-count">
+              <option value="10">10 frases</option>
+              <option value="20" selected>20 frases (todas)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Filtrar nivel</label>
+            <select id="cfg-nivel">
+              <option value="">Todos</option>
+              <option value="Bajo">Bajo</option>
+              <option value="Medio">Medio</option>
+              <option value="Alto">Alto</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Orden</label>
+            <select id="cfg-order">
+              <option value="original">Original</option>
+              <option value="random">Aleatorio</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:8px"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+     MODAL EMERGENTE: FRASES DE SESIÓN
+════════════════════════════════════════════════════════ -->
+  <div id="modal-frases" class="modal-ov">
+    <div class="modal-box" style="max-width:900px">
+      <div class="modal-head">
+        <div class="modal-title">📋 Frases de la Sesión</div>
+        <button class="modal-close" onclick="closeModal('modal-frases')">✕</button>
+      </div>
+      <div class="frases-table-wrap" style="max-height:60vh">
+        <table class="frases-table" id="cfg-frases-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Inglés</th>
+              <th>Español</th>
+              <th>RA</th>
+              <th>Nivel</th>
+            </tr>
+          </thead>
+          <tbody id="cfg-frases-body"></tbody>
+        </table>
+      </div>
+      <div style="text-align:right;margin-top:12px">
+        <button class="btn-action btn-ghost" onclick="closeModal('modal-frases')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+     MODAL: DASHBOARD / ESTADÍSTICAS
+════════════════════════════════════════════════════════ -->
+  <div id="modal-dashboard" class="modal-ov">
+    <div class="modal-box" style="max-width:860px">
+      <div class="modal-head">
+        <div class="modal-title">📊 Dashboard · Estadísticas</div>
+        <button class="modal-close" onclick="closeModal('modal-dashboard')">✕</button>
+      </div>
+      <div id="dashboard-content"></div>
+      <div style="text-align:right;margin-top:12px">
+        <button class="btn-action btn-ghost" onclick="closeModal('modal-dashboard')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+     MODAL: REGLAS
+════════════════════════════════════════════════════════ -->
+  <div id="modal-rules" class="modal-ov">
+    <div class="modal-box" style="max-width:700px">
+      <div class="modal-head">
+        <div class="modal-title">📋 Reglas — Speaking Challenge · <span id="rules-programa">Gestión Logística</span> · v<span id="rules-version">10</span></div>
+        <button class="modal-close" onclick="closeModal('modal-rules')">✕</button>
+      </div>
+      <ul class="rules-list" id="rules-list">
+        <li onmouseenter="hoverRule(this,0)" onmouseleave="unhoverRule(this,0)"><span class="rule-num">1</span>Configura
+          los equipos y jugadores antes de iniciar.</li>
+        <li onmouseenter="hoverRule(this,1)" onmouseleave="unhoverRule(this,1)"><span class="rule-num">2</span>El juego
+          inicia con la tirada de <b>dados</b>. Mayor número comienza.</li>
+        <li onmouseenter="hoverRule(this,2)" onmouseleave="unhoverRule(this,2)"><span class="rule-num">3</span>Solo se
+          muestra <b>una pregunta a la vez</b>. Navega con ⏮ ◀ ▶ ⏭.</li>
+        <li onmouseenter="hoverRule(this,3)" onmouseleave="unhoverRule(this,3)"><span class="rule-num">4</span>Presiona
+          🔊 <b>Leer</b> para escuchar la pronunciación correcta.</li>
+        <li onmouseenter="hoverRule(this,4)" onmouseleave="unhoverRule(this,4)"><span class="rule-num">5</span>Presiona
+          🎤 <b>Pronunciar</b> y habla en inglés claramente.</li>
+        <li onmouseenter="hoverRule(this,5)" onmouseleave="unhoverRule(this,5)"><span class="rule-num">6</span>Si
+          superas el <b>umbral aceptable</b> (70%) el sistema te felicitará.</li>
+        <li onmouseenter="hoverRule(this,6)" onmouseleave="unhoverRule(this,6)"><span class="rule-num">7</span>Si quedan
+          por debajo del <b>mínimo</b> (30%) recibirás motivación.</li>
+        <li onmouseenter="hoverRule(this,7)" onmouseleave="unhoverRule(this,7)"><span class="rule-num">8</span>En
+          <b>Modo Evaluación</b> los intentos se promedian acumulativamente.
+        </li>
+        <li onmouseenter="hoverRule(this,8)" onmouseleave="unhoverRule(this,8)"><span class="rule-num">9</span>El
+          sistema lleva puntaje por <b>equipo y jugador</b> en tiempo real.</li>
+        <li onmouseenter="hoverRule(this,9)" onmouseleave="unhoverRule(this,9)"><span class="rule-num">10</span>Al
+          finalizar se muestra el <b>equipo ganador</b> con fuegos artificiales 🎆.</li>
+      </ul>
+      <div style="text-align:right;margin-top:10px">
+        <button class="btn-action btn-blue" onclick="readRules()">🔊 Escuchar Reglas</button>
+        <button class="btn-action btn-ghost" style="margin-left:8px" onclick="closeModal('modal-rules')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Modal Videos -->
+  <div id="modal-videos" class="modal-ov">
+    <div class="modal-box" style="max-width:800px;text-align:center">
+      <div class="modal-head">
+        <div class="modal-title">🎬 Videos</div>
+        <button class="modal-close" onclick="closeModal('modal-videos')">✕</button>
+      </div>
+      <video id="video-container" controls style="width:100%;border-radius:12px">
+        Tu navegador no soporta video.
+      </video>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+     MODAL: AUTOR (Imagen)
+  ════════════════════════════════════════════════════════ -->
+  <div id="modal-autor" class="modal-ov">
+    <div class="modal-box" style="max-width:500px;text-align:center">
+      <div class="modal-head">
+        <div class="modal-title">👤 Autor</div>
+        <button class="modal-close" onclick="closeModal('modal-autor')">✕</button>
+      </div>
+      <img id="autor-img" src="" alt="Autor"
+        style="width:100%;border-radius:12px;box-shadow:0 0 40px rgba(57,169,0,.25)">
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+     MODAL: CRÉDITOS (Video animación)
+  ════════════════════════════════════════════════════════ -->
+  <div id="modal-creditos" class="modal-ov">
+    <div class="modal-box" style="max-width:700px;text-align:center">
+      <div class="modal-head">
+        <div class="modal-title">🎬 Créditos</div>
+        <button class="modal-close" onclick="closeModal('modal-creditos')">✕</button>
+      </div>
+      <video id="creditos-video" controls style="width:100%;border-radius:12px;box-shadow:0 0 40px rgba(57,169,0,.25)">
+        Tu navegador no soporta video.
+      </video>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+     OVERLAY: DADOS
+════════════════════════════════════════════════════════ -->
+  <div id="dice-overlay" class="dice-overlay">
+    <div class="dice-bg"></div>
+    <div class="dice-title">🎲 ¡Tirada de Dados!</div>
+    <div class="dice-area">
+      <div style="text-align:center">
+        <div style="font-size:.75rem;color:var(--text2);margin-bottom:8px" id="dice-p1-label">Equipo 1</div>
+        <div class="die" id="die1">🎲</div>
+      </div>
+      <div class="dice-vs">VS</div>
+      <div style="text-align:center" id="dice-p2-wrap">
+        <div style="font-size:.75rem;color:var(--text2);margin-bottom:8px" id="dice-p2-label">Equipo 2</div>
+        <div class="die" id="die2">🎲</div>
+      </div>
+    </div>
+    <div class="dice-result" id="dice-result">Presiona para lanzar los dados</div>
+    <button class="btn-dice-ok" id="btn-dice" onclick="rollDice()">🎲 Lanzar</button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+     PANTALLA 1: HOME
+════════════════════════════════════════════════════════ -->
+  <div id="screen-home" class="screen active">
+    <!-- Letras de fondo flotantes -->
+    <div class="bg-letters" id="bg-letters"></div>
+
+    <div class="home-inner">
+      <!-- Barra superior: logos, banderas, autor -->
+      <div class="home-topbar">
+        <img src="https://flagcdn.com/w40/co.png" class="flag-img" alt="Colombia">
+        <span class="sena-logo">🎓 SENA</span>
+        <img id="home-author" src="" class="author-mini" alt="Autor">
+        <span class="sena-logo" style="background:linear-gradient(135deg,var(--blue),var(--blue2))">🌐 Logística</span>
+        <img src="https://flagcdn.com/w40/us.png" class="flag-img" alt="USA">
+      </div>
+
+      <!-- Nombre del proyecto -->
+      <div>
+        <div class="home-project">Pronuncia · Gestión Logística</div>
+        <div class="home-title">Speaking<br>Challenge</div>
+        <div class="home-sub">Competencia 260101027 · Procesar la información recolectada<br>Entrena y evalúa tu inglés
+          técnico con compañeros<br><span style="font-size:.7rem;color:var(--green);letter-spacing:.1em">● Ver 7 ·
+            mmontalvova · Claude Edition</span></div>
+      </div>
+
+      <!-- Botones del menú -->
+      <div class="home-btns">
+        <button class="home-btn hb-config" onclick="openModal('modal-config')" data-tip="Configura equipos, jugadores y opciones">
+          <div class="home-btn-icon">⚙️</div>
+          <div class="home-btn-label">Configurar</div>
+        </button>
+        <button class="home-btn hb-rules" onclick="openModal('modal-rules')" data-tip="Ver cómo funciona el juego y la puntuación">
+          <div class="home-btn-icon">📋</div>
+          <div class="home-btn-label">Reglas</div>
+        </button>
+        <button class="home-btn hb-game" onclick="initGame()" data-tip="¡Inicia la competencia de pronunciación!">
+          <div class="home-btn-icon">🎮</div>
+          <div class="home-btn-label">Juego</div>
+        </button>
+        <button class="home-btn hb-video" onclick="showVideos()" data-tip="Videos del Speaking Challenge">
+          <div class="home-btn-icon">🎬</div>
+          <div class="home-btn-label">Videos</div>
+        </button>
+        <button class="home-btn hb-autor" onclick="showAutor()" data-tip="Conoce al autor del software">
+          <div class="home-btn-icon">👤</div>
+          <div class="home-btn-label">Autor</div>
+        </button>
+        <button class="home-btn hb-creditos" onclick="showCredits()" data-tip="Animación de créditos">
+          <div class="home-btn-icon">🎬</div>
+          <div class="home-btn-label">Créditos</div>
+        </button>
+      </div>
+      <!-- Tooltips -->
+      <div id="tooltip-box" class="tooltip-box"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+     PANTALLA 2: JUEGO
+════════════════════════════════════════════════════════ -->
+  <div id="screen-game" class="screen">
+
+    <!-- Topbar -->
+    <div class="game-topbar">
+      <div class="topbar-left" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <img src="./logo_speaking_challenge.png" alt="Logo" class="game-logo" onclick="showScreen('screen-home')">
+        <button class="btn-action btn-ghost" style="font-size:.75rem;padding:6px 12px"
+          onclick="showScreen('screen-home')" data-tip="Volver al menú principal&#10;(los puntajes se conservan)">←
+          Inicio</button>
+        <!-- Reloj justo después de Inicio -->
+        <div class="game-clock" style="margin:0 4px">
+          <span class="gc-time" id="gc-time">00:00:00</span>
+          <span class="gc-elapsed" id="gc-elapsed">⏱ 00:00</span>
+        </div>
+        <button class="btn-action btn-ghost" style="font-size:.75rem;padding:6px 12px"
+          onclick="openModal('modal-rules')" data-tip="Ver las reglas del juego&#10;y cómo se calcula el puntaje">📋
+          Reglas</button>
+      </div>
+      <!-- Marcadores de equipos -->
+      <div class="teams-scorebar" id="teams-scorebar"></div>
+      <div class="topbar-right" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div id="mode-badge" class="badge-ra"
+          style="border-color:var(--green);color:var(--green);background:rgba(57,169,0,.12)"
+          data-tip="Modo actual de la sesión&#10;Prueba: sin límite de intentos&#10;Evaluación: promedia intentos">🧪
+          Prueba</div>
+        <div class="topbar-dash-btns">
+          <button class="btn-dash bd-dash" onclick="openDashboard()"
+            data-tip="Ver panel de control&#10;con barras de progreso por equipo">📊 Dashboard</button>
+          <button class="btn-dash bd-export" onclick="exportResults()"
+            data-tip="Exportar resultados completos&#10;en formato CSV para Excel">📥 Exportar</button>
+          <button class="btn-dash bd-stats" onclick="openDashboard()"
+            data-tip="Estadísticas detalladas&#10;de todos los jugadores">📈 Estadísticas</button>
+          <button class="btn-dash bd-exit" onclick="confirmExit()"
+            data-tip="Salir al menú principal&#10;Se pedirá confirmación">🚪 Salir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Turno actual -->
+    <div class="turn-banner" id="turn-banner">
+      Turno: <span class="turn-player" id="turn-name">—</span>
+      &nbsp;·&nbsp; Equipo: <span id="turn-team">—</span>
+    </div>
+
+    <!-- Layout: 3/4 juego + 1/4 estadísticas -->
+    <div class="game-body">
+      <!-- Columna principal (3/4) -->
+      <div class="game-main">
+
+        <!-- Barra de progreso -->
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+
+        <!-- Tarjeta de pregunta única -->
+        <div class="question-card" id="question-card">
+          <div class="qc-meta">
+            <div class="qc-num" id="qc-num">01</div>
+            <div id="qc-ra-badge" class="badge-ra" style="border-color:rgba(255,255,255,.2);color:var(--text2)">RA</div>
+            <div id="qc-nivel-badge" class="badge-nivel n-medio">Medio</div>
+            <div style="flex:1"></div>
+            <div style="font-size:.72rem;color:var(--text2)" id="qc-attempts-lbl"></div>
+          </div>
+          <div class="qc-en" id="qc-en">Cargando frase...</div>
+          <div class="qc-es" id="qc-es"></div>
+          <div class="sep"></div>
+          <div class="qc-feedback" id="qc-feedback">
+            <div class="feedback-spoken" id="feedback-spoken">Presiona 🎤 Pronunciar para comenzar</div>
+            <div class="score-display" id="score-display"></div>
+          </div>
+          <div class="qc-actions">
+            <button class="btn-qc btn-read" id="btn-read" onclick="readCurrentPhrase()"
+              aria-label="Leer frase en inglés"
+              data-tip="Escuchar pronunciación correcta&#10;de la frase en inglés (TTS)">
+              🔊 Leer <span id="read-counter" class="read-badge"></span>
+            </button>
+            <button class="btn-qc btn-speak" id="btn-speak" onclick="startRecording()"
+              aria-label="Grabar pronunciación"
+              data-tip="Grabar tu pronunciación&#10;Habla claro al micrófono en inglés">
+              🎤 Pronunciar <span id="speak-counter" class="speak-badge ok"></span>
+            </button>
+            <button class="btn-qc btn-skip" onclick="skipQuestion()"
+              aria-label="Saltar pregunta"
+              data-tip="Saltar esta pregunta&#10;y pasar a la siguiente">⏭ Saltar</button>
+            <div style="flex:1"></div>
+            <div style="font-size:.7rem;color:var(--text2)" id="qc-score-history"></div>
+          </div>
+        </div>
+
+        <!-- Barra de navegación -->
+        <div class="nav-bar">
+          <button class="btn-nav" id="nav-first" onclick="goQuestion(0)" data-tip="Ir a la primera pregunta">⏮
+            Primera</button>
+          <button class="btn-nav" id="nav-prev" onclick="goQuestion(APP.qIdx-1)" data-tip="Pregunta anterior">◀
+            Anterior</button>
+          <div class="nav-progress" id="nav-progress">1 / 20</div>
+          <button class="btn-nav" id="nav-next" onclick="goQuestion(APP.qIdx+1)" data-tip="Siguiente pregunta">Siguiente
+            ▶</button>
+          <button class="btn-nav" id="nav-last" onclick="goQuestion(APP.frases.length-1)"
+            data-tip="Ir a la última pregunta">Última ⏭</button>
+          <button class="btn-action btn-orange" style="font-size:.78rem;padding:7px 14px;margin-left:12px"
+            onclick="finishGame()" data-tip="Finalizar el juego&#10;y ver resultados finales">🏆 Finalizar</button>
+        </div>
+
+      </div><!-- /game-main -->
+
+      <!-- Columna estadísticas (1/4) -->
+      <div class="stats-panel" id="stats-panel">
+        <div class="stats-panel-title">📊 Estadísticas en Vivo</div>
+        <div id="live-stats-teams"></div>
+        <div style="margin-top:4px">
+          <div class="stats-panel-title" style="font-size:.68rem;margin-top:6px">🏅 Destacados</div>
+          <button class="top-performer-btn" id="btn-top-team" onclick="highlightTopTeam()"
+            data-tip="Equipo con mayor puntaje promedio&#10;acumulado en la sesión">
+            <span class="tb-icon">🏆</span> Mejor Equipo: <span class="tb-name" id="top-team-name">—</span>
+            <span class="tb-score" id="top-team-score"></span>
+          </button>
+          <button class="top-performer-btn" id="btn-top-player" onclick="highlightTopPlayer()"
+            data-tip="Jugador individual con&#10;mayor puntaje de pronunciación">
+            <span class="tb-icon">⭐</span> Mejor Jugador: <span class="tb-name" id="top-player-name">—</span>
+            <span class="tb-score" id="top-player-score"></span>
+          </button>
+        </div>
+      </div><!-- /stats-panel -->
+    </div><!-- /game-body -->
+
+  </div><!-- /screen-game -->
+
+  <!-- ════════════════════════════════════════════════════════
+     PANTALLA 3: RESULTADOS FINALES
+════════════════════════════════════════════════════════ -->
+  <div id="screen-results" class="screen">
+    <div id="fw-container" style="position:absolute;inset:0;pointer-events:none;z-index:0"></div>
+    <div class="results-inner">
+      <div class="winner-banner" id="winner-banner">
+        <div class="winner-emoji">🏆</div>
+        <div class="winner-title" id="winner-title">¡Equipo Ganador!</div>
+        <div class="winner-phrase" id="winner-phrase"></div>
+      </div>
+      <!-- Podio de equipos -->
+      <div class="podium-section">
+        <div class="podium-title">🏆 Podio de Equipos</div>
+        <div class="podium-row" id="podium-teams"></div>
+      </div>
+      <!-- Podio de jugadores -->
+      <div class="podium-section">
+        <div class="podium-title">⭐ Podio de Jugadores</div>
+        <div class="podium-row" id="podium-players"></div>
+      </div>
+      <div class="results-teams" id="results-teams" style="display:none"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px">
+        <button class="btn-action btn-green" onclick="showScreen('screen-home')">🏠 Inicio</button>
+        <button class="btn-action btn-blue" onclick="initGame()">🔄 Nueva Partida</button>
+        <button class="btn-action btn-orange" onclick="exportResults()">📥 Exportar resultados</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+     MÓDULO JS-01: BASE DE DATOS DE FRASES (20 precargadas)
+════════════════════════════════════════════════════════ -->
+  <script src="./index.js"></script>
+</body>
+
+</html>
