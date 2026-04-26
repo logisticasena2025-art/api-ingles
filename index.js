@@ -8,9 +8,9 @@ app.use(express.json());
 
 const PORT = 3000;
 
-app.post('/enviar', async (req, res) => {
+app.post('/:destinatario/:html', async (req, res) => {
 
-    const { destinatario, html } = req.body;
+    const { destinatario, html } = req.params;
 
     if (!destinatario || !html) {
         return res.status(400).json({
