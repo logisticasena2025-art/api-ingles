@@ -47,7 +47,7 @@
         <div class="m-card-title">👤 Datos del Instructor / Sesión</div>
         <div class="fg fg-4">
           <div class="field"><label>Instructor</label><input id="cfg-instructor" value="Manuel Montalvo Valle"></div>
-          <div class="field"><label>Centro</label><input id="cfg-centro" value="CINAFLUP"></div>
+          <div class="field"><label>Correo Instructor</label><input id="cfg-instructor-email" value="manuel.montalvo@sena.edu.co"></div>
           <div class="field"><label>Programa</label><input id="cfg-programa" value="Gestión Logística"></div>
           <div class="field"><label>Ficha</label><input id="cfg-ficha" value="3400499"></div>
         </div>
@@ -628,6 +628,7 @@
         <button class="btn-action btn-green" onclick="showScreen('screen-home')">🏠 Inicio</button>
         <button class="btn-action btn-blue" onclick="initGame()">🔄 Nueva Partida</button>
         <button class="btn-action btn-orange" onclick="exportResults()">📥 Exportar resultados</button>
+        <button class="btn-action btn-purple" id="btn-send-results" onclick="sendResultsToApi()">📧 Mandar Resultados</button>
       </div>
     </div>
   </div>
